@@ -1,0 +1,12 @@
+[
+  {
+    "transaction_id": "TXN002",
+    "user_id": "U002",
+    "type": "income",
+    "amount": 50.0,
+    "category": "garage",
+    "date": "2025-10-17",
+    "description": "",
+    "payment_method": "cash"
+  }
+]

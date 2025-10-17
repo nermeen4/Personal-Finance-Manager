@@ -4,11 +4,5 @@
     "name": "mohamed",
     "password": "123",
     "currency": "EUR"
-  },
-  {
-    "user_id": "U002",
-    "name": "test1",
-    "password": "123",
-    "currency": "EGP"
   }
 ]

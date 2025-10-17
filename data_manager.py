@@ -98,3 +98,42 @@ def save_data(users: List[dict], transactions: List[dict]) -> None:
     except OSError as e:
         # If writing fails, you might want to restore backups or alert the user
         raise RuntimeError(f"Failed to save data files: {e}")
+
+# --- New: save/load users only (no transactions) ---
+def load_users() -> List[dict]:
+    """
+    Load and return users list from USERS_FILE.
+    Returns [] on error (prints a warning).
+    """
+    ensure_data_files()
+    try:
+        with open(USERS_FILE, "r", encoding="utf-8") as uf:
+            users = json.load(uf)
+        if not isinstance(users, list):
+            raise ValueError("users.json does not contain a list")
+        return users
+    except (OSError, json.JSONDecodeError, ValueError) as e:
+        print(f"[data_manager] Warning: failed to load users ({e}). Returning empty list.")
+        return []
+
+def save_users(users: List[dict]) -> None:
+    """
+    Save users list to USERS_FILE only.
+    Creates a timestamped backup of users.json, writes atomically.
+    """
+    ensure_data_files()
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    if os.path.exists(USERS_FILE):
+        try:
+            backup_path = f"{USERS_FILE}.bak_{ts}"
+            os.replace(USERS_FILE, backup_path)
+        except OSError as e:
+            print(f"[data_manager] Warning: could not create users backup {backup_path}: {e}")
+
+    try:
+        tmp_users = f"{USERS_FILE}.tmp"
+        with open(tmp_users, "w", encoding="utf-8") as f:
+            json.dump(users, f, indent=2, ensure_ascii=False)
+        os.replace(tmp_users, USERS_FILE)
+    except OSError as e:
+        raise RuntimeError(f"Failed to save users file: {e}")

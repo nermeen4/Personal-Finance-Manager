@@ -12,6 +12,7 @@ def clear_screen():
 
 # ===== MODULE IMPORTS =====
 import transactions
+import search_filter
 import auth  # ✅ Import the real user management module
 
 # ========== TRANSACTIONS ==========
@@ -78,32 +79,17 @@ def search_filter_menu():
         if choice == "0":
             break
         elif choice == "1":
-            search_by_date()
+            search_filter.search_by_date()
         elif choice == "2":
-            filter_by_category()
+            search_filter.filter_by_category()
         elif choice == "3":
-            amount_range_filter()
+            search_filter.amount_range_filter()
         elif choice == "4":
-            sort_results()
+            search_filter.sort_results()
         else:
             print("❌ Invalid option.")
             input("Press Enter to continue...")
 
-def search_by_date():
-    print("→ [Placeholder] Search transactions by date range.")
-    input("Press Enter to return...")
-
-def filter_by_category():
-    print("→ [Placeholder] Filter transactions by category.")
-    input("Press Enter to return...")
-
-def amount_range_filter():
-    print("→ [Placeholder] Filter transactions by amount range.")
-    input("Press Enter to return...")
-
-def sort_results():
-    print("→ [Placeholder] Sort transactions (by date, amount, etc.).")
-    input("Press Enter to return...")
 
 # ========== MAIN MENU ==========
 def main_menu():

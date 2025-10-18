@@ -48,15 +48,5 @@
     "date": "2025-10-19",
     "description": "",
     "payment_method": "app"
-  },
-  {
-    "transaction_id": "TXN007",
-    "user_id": "U003",
-    "type": "income",
-    "amount": 2000.0,
-    "category": "Food",
-    "date": "2025-10-24",
-    "description": "",
-    "payment_method": "Cash"
   }
 ]

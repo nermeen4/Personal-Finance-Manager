@@ -28,25 +28,5 @@
     "date": "2024-10-19",
     "description": "",
     "payment_method": "cash"
-  },
-  {
-    "transaction_id": "TXN005",
-    "user_id": "U001",
-    "type": "expense",
-    "amount": 600.0,
-    "category": "garage",
-    "date": "2025-10-19",
-    "description": "",
-    "payment_method": "cash"
-  },
-  {
-    "transaction_id": "TXN006",
-    "user_id": "U001",
-    "type": "income",
-    "amount": 500.0,
-    "category": "food",
-    "date": "2025-10-19",
-    "description": "",
-    "payment_method": "app"
   }
 ]

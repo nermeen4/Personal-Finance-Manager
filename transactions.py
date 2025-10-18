@@ -89,6 +89,10 @@ def add_transaction():
     global _next_id, TRANSACTIONS
     _clear_screen()
     print("→ Add income or expense")
+    if not auth.current_user:
+        print("You must be logged in to add a transaction.")
+        _pause()
+        return
     ttype = input("Type (income/expense): ").strip().lower()
     if ttype not in ("income", "expense"):
         print("❌ Invalid type; must be 'income' or 'expense'.")
@@ -101,10 +105,7 @@ def add_transaction():
         _pause()
         return
 
-    if not auth.current_user:
-        print("You must be logged in to add a transaction.")
-        _pause()
-        return
+
 
     user_id = auth.current_user.get("user_id") or auth.current_user.get("name")
     category = input("Category: ").strip() or "Uncategorized"

@@ -14,6 +14,7 @@ def clear_screen():
 import transactions
 import search_filter
 import auth  # ✅ Import the real user management module
+import reports
 
 # ========== TRANSACTIONS ==========
 # Backward-compat shim in case other code calls it
@@ -36,13 +37,13 @@ def reports_menu():
         if choice == "0":
             break
         elif choice == "1":
-            dashboard_summary()
+            reports.dashboard_summary()
         elif choice == "2":
-            monthly_reports()
+            reports.monthly_reports()
         elif choice == "3":
-            category_breakdown()
+            reports.category_breakdown()
         elif choice == "4":
-            spending_trends()
+            reports.spending_trends()
         else:
             print("❌ Invalid option.")
             input("Press Enter to continue...")

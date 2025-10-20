@@ -15,6 +15,7 @@ import transactions
 import search_filter
 import auth  # ✅ Import the real user management module
 import reports
+import ascii_viz
 
 # ========== TRANSACTIONS ==========
 # Backward-compat shim in case other code calls it
@@ -103,6 +104,7 @@ def main_menu():
         print("2) 💳 Transactions")
         print("3) 📊 Reports")
         print("4) 🔍 Search & Filter")
+        print("5) 🖼️ ASCII Visuals")
         print("0) Exit")
         choice = input("\nSelect an option: ").strip()
 
@@ -118,6 +120,8 @@ def main_menu():
             reports_menu()
         elif choice == "4":
             search_filter_menu()
+        elif choice == "5":
+            ascii_viz.ascii_viz_menu()
         else:
             print("❌ Invalid choice.")
             input("Press Enter to continue...")

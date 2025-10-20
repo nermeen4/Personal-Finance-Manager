@@ -58,11 +58,5 @@
     "date": "2025-10-24",
     "description": "",
     "payment_method": "Cash"
-  },
-  {
-    "id": 7,
-    "user_id": 4,
-    "amount": 50,
-    "type": "deposit"
   }
 ]

@@ -1,29 +1,52 @@
-from data_manager import load_data, save_data
+from data_manager import (
+    load_users, save_users,
+    load_transactions, save_transactions,
+    auto_save, shutdown_save,
+    backup_all
+)
+import time
 import os
-import json
 
-print("🔍 Testing backup system...\n")
+print("\n=== Test: Personal Finance Data Manager ===")
 
-# 1. Load existing data (creates files if missing)
-users, txns = load_data()
+# Step 1 — Prepare test data
+users = [
+    {"user_id": "U001", "name": "Nermeen", "password": "1234"},
+    {"user_id": "U002", "name": "Mohamed", "password": "abcd"}
+]
 
-# 2. Simulate new data
-users.append({"id": len(users)+1, "name": "Backup Tester"})
-txns.append({"id": len(txns)+1, "user_id": len(users), "amount": 50, "type": "deposit"})
+transactions = [
+    {"transaction_id": "T001", "user_id": "U001", "type": "expense", "amount": 50.0, "category": "Food", "date": "2025-10-21"},
+    {"transaction_id": "T002", "user_id": "U002", "type": "income", "amount": 300.0, "category": "Salary", "date": "2025-10-21"}
+]
 
-# 3. Save the data (should trigger backup creation)
-save_data(users, txns)
+# Step 2 — Test saving
+print("\n[TEST] Saving users and transactions...")
+save_users(users)
+save_transactions(transactions)
 
-# 4. List all backups created
-backup_dir = os.path.join("data", "backups")
-backups = [f for f in os.listdir(backup_dir) if f.endswith(".json") or ".bak_" in f]
+# Step 3 — Test loading
+print("\n[TEST] Loading data back...")
+loaded_users = load_users()
+loaded_txns = load_transactions()
+print("Loaded users:", loaded_users)
+print("Loaded transactions:", loaded_txns)
 
-print("✅ Data saved successfully!")
-print(f"📁 Backup files found in {backup_dir}:")
-for b in backups:
-    print(" -", b)
+# Step 4 — Test auto-save (force mode)
+print("\n[TEST] Testing auto-save (forced)...")
+auto_save(loaded_users, loaded_txns, force=True)
 
-# 5. Verify JSON content
-print("\n📘 Current users.json content:")
-with open("data/users.json", "r", encoding="utf-8") as f:
-    print(json.dumps(json.load(f), indent=2, ensure_ascii=False))
+# Step 5 — Wait a few seconds, then test periodic auto-save
+print("\n[TEST] Waiting to test timed auto-save...")
+time.sleep(2)  # wait a bit for readability
+auto_save(loaded_users, loaded_txns)  # normal (will skip if interval < 60s)
+
+# Step 6 — Test backup creation manually
+print("\n[TEST] Creating timestamped backup manually...")
+backup_all()
+
+# Step 7 — Test shutdown save (simulates program exit)
+print("\n[TEST] Testing shutdown save...")
+shutdown_save(loaded_users, loaded_txns)
+
+print("\n✅ All tests completed!")

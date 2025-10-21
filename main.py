@@ -11,11 +11,11 @@ def clear_screen():
     print("\033c", end="")
 
 # ===== MODULE IMPORTS =====
-import transactions
-import search_filter
-import auth  # ✅ Import the real user management module
-import reports
-import ascii_viz
+from core import transactions
+from core import search_filter
+from core import auth  # ✅ Import the real user management module
+from core import reports
+from core import ascii_viz
 
 # ========== TRANSACTIONS ==========
 # Backward-compat shim in case other code calls it

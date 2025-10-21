@@ -1,221 +1,132 @@
-# ...existing code...
 """
-data_manager.py - Handles data persistence and backup.
+data_manager.py - Handles data persistence and backups.
 
 Responsible for:
-- Saving/loading user and transaction data to/from JSON or CSV
-- Automatic backups
-- Ensuring data consistency on startup and shutdown
+- Loading and saving JSON files (users, transactions)
+- Ensuring data directory exists
+- Auto-save functionality
+- Shutdown save operations
+- Basic backup and restore operations
 """
-
-import json
-import os
-import shutil
-import glob
-from datetime import datetime
-from typing import Tuple, List, Optional
-
-# constant filepath's name 
+import os   # handle existing file paths and directories
+import json # read and write JSON files
+from typing import Any, Dict, List  # used to import type hints classes that describe what types of data your functions expect or return
+from datetime import datetime # used to create timestamps for backup files
+import time # used for auto-save timing
+ 
+# === File paths ===
 DATA_DIR = "data"
-BACKUP_DIR = os.path.join(DATA_DIR, "backups")
 USERS_FILE = os.path.join(DATA_DIR, "users.json")
-TXNS_FILE = os.path.join(DATA_DIR, "transactions.json")
-_BACKUP_KEEP = 5  # number of backups to keep per file
+TRANSACTIONS_FILE = os.path.join(DATA_DIR, "transactions.json")
+BACKUP_DIR = os.path.join(DATA_DIR, "backups")
 
 
-def ensure_data_files() -> None:
-    """Ensure the data directory and base JSON files exist.
-    If the files do not exist, create them with an empty JSON list []"""
-    os.makedirs(DATA_DIR, exist_ok=True)
-    os.makedirs(BACKUP_DIR, exist_ok=True)
-    for path in (USERS_FILE, TXNS_FILE):
-        if not os.path.exists(path):
-            try:
-                with open(path, "w", encoding="utf-8") as f:
-                    json.dump([], f, indent=2)
-            except OSError as e:
-                raise RuntimeError(f"Failed to create data file {path}: {e}")
-
-###########################backup parts ###########################
-def _backup_filename(file_path: str, ts: Optional[str] = None) -> str:
-    base = os.path.basename(file_path)
-    ts = ts or datetime.now().strftime("%Y%m%d_%H%M%S")
-    return os.path.join(BACKUP_DIR, f"{base}.bak_{ts}")
+# === Global auto-save settings ===
+AUTO_SAVE_INTERVAL = 60  # auto-saave every 60 seconds
+_last_auto_save = 0      # tracks the last auto-save time
+_save_counter = 0        # counts how many times auto-save occurred
 
 
-def _rotate_backups(file_path: str, keep: int = _BACKUP_KEEP) -> None:
-    """Keep only the most recent `keep` backups for the given file (by filename prefix)."""
-    base = os.path.basename(file_path)
-    pattern = os.path.join(BACKUP_DIR, f"{base}.bak_*")
-    files = sorted(glob.glob(pattern))
-    # older first; remove until length == keep
-    while len(files) > keep:
-        old = files.pop(0)
-        try:
-            os.remove(old)
-        except OSError:
-            pass
+# === Ensure data directories exist (helper)===
+def ensure_data_dir():
+    """Ensure the data and backup directory exists."""
+    if not os.path.exists(DATA_DIR):
+        os.makedirs(DATA_DIR)
+    if not os.path.exists(BACKUP_DIR):
+        os.makedirs(BACKUP_DIR)
 
 
-def _make_backup(file_path: str, keep: int = _BACKUP_KEEP) -> Optional[str]:
-    """Create a timestamped copy of file_path into BACKUP_DIR. Return backup path or None."""
+   
+
+# === Load and Save JSON Data ===
+def load_json(file_path: str) -> List[Dict[str, Any]]:
+    """Load JSON data from a file."""
+    ensure_data_dir()
     if not os.path.exists(file_path):
-        return None
+        return [] # Return empty list if file missing
+    
+    # handling JSON decode errors or file not found errors
     try:
-        backup_path = _backup_filename(file_path)
-        shutil.copy2(file_path, backup_path)
-        _rotate_backups(file_path, keep=keep)
-        return backup_path
-    except OSError as e:
-        # warn and continue; caller can decide how to handle
-        print(f"[data_manager] Warning: could not create backup for {file_path}: {e}")
-        return None
-
-
-def _latest_backup_for(file_path: str) -> Optional[str]:
-    base = os.path.basename(file_path)
-    pattern = os.path.join(BACKUP_DIR, f"{base}.bak_*")
-    files = sorted(glob.glob(pattern), reverse=True)
-    return files[0] if files else None
-
-
-def restore_latest_backup(file_path: str) -> bool:
-    """Restore the latest available backup for file_path -> file_path. Returns True if restored."""
-    latest = _latest_backup_for(file_path)
-    if not latest:
-        return False
-    try:
-        shutil.copy2(latest, file_path)
-        return True
-    except OSError:
-        return False
-
-####################save/load data parts ####################
-def load_data() -> Tuple[List[dict], List[dict]]:
-    """
-    Load and return (users, transactions) from JSON files.
-    If files are missing or corrupted, returns two empty lists.
-    """
-    ensure_data_files()
-    try:
-        with open(USERS_FILE, "r", encoding="UTF-8") as uf:
-            users = json.load(uf)
-        with open(TXNS_FILE, "r", encoding="UTF-8") as tf:
-            transactions = json.load(tf)
-
-        # Basic sanity: ensure lists
-        if not isinstance(users, list):
-            raise ValueError("users.json does not contain a list")
-        if not isinstance(transactions, list):
-            raise ValueError("transactions.json does not contain a list")
-        return users, transactions
-    except (OSError, json.JSONDecodeError, ValueError) as e:
-        print(f"[data_manager] Warning: failed to load data ({e}). Attempting restore from backups...")
-        # Try to restore from latest backups (users then transactions)
-        restored_users = restored_txns = False
-        try:
-            restored_users = restore_latest_backup(USERS_FILE)
-            restored_txns = restore_latest_backup(TXNS_FILE)
-        except Exception:
-            restored_users = restored_txns = False
-
-        if restored_users or restored_txns:
-            # Try loading again after restore
-            try:
-                with open(USERS_FILE, "r", encoding="UTF-8") as uf:
-                    users = json.load(uf)
-                with open(TXNS_FILE, "r", encoding="UTF-8") as tf:
-                    transactions = json.load(tf)
-                if not isinstance(users, list) or not isinstance(transactions, list):
-                    raise ValueError("Restored files invalid")
-                print("[data_manager] Restored data from backups.")
-                return users, transactions
-            except Exception as e2:
-                print(f"[data_manager] Restore failed ({e2}). Starting with empty data.")
-                return [], []
-        else:
-            return [], []
-
-
-def save_data(users: List[dict], transactions: List[dict]) -> None:
-    """
-    Save users and transactions to JSON files.
-    Creates timestamped backups of existing files before writing.
-    Writes atomically by writing to a temporary file then replacing the original.
-    On write failure, attempts to restore the latest backups.
-    """
-    ensure_data_files()
-
-    # create backups (copy, not move) so originals remain until new files succeed
-    _make_backup(USERS_FILE)
-    _make_backup(TXNS_FILE)
-
-    try:
-        # users
-        tmp_users = f"{USERS_FILE}.tmp"
-        with open(tmp_users, "w", encoding="utf-8") as f:
-            json.dump(users, f, indent=2, ensure_ascii=False)
-        os.replace(tmp_users, USERS_FILE)
-
-        # transactions
-        tmp_tx = f"{TXNS_FILE}.tmp"
-        with open(tmp_tx, "w", encoding="utf-8") as f:
-            json.dump(transactions, f, indent=2, ensure_ascii=False)
-        os.replace(tmp_tx, TXNS_FILE)
-    except OSError as e:
-        # Attempt to restore latest backups if writing failed
-        print(f"[data_manager] Error saving data ({e}). Attempting to restore backups...")
-        users_restored = restore_latest_backup(USERS_FILE)
-        txns_restored = restore_latest_backup(TXNS_FILE)
-        if users_restored or txns_restored:
-            print("[data_manager] Restore from backups completed (partial ok).")
-        else:
-            print("[data_manager] Failed to restore backups; data files may be inconsistent.")
-        raise RuntimeError(f"Failed to save data files: {e}")
-
-
-# --- New: save/load users only (no transactions) ---
-def load_users() -> List[dict]:
-    """
-    Load and return users list from USERS_FILE.
-    Returns [] on error (prints a warning).
-    """
-    ensure_data_files()
-    try:
-        with open(USERS_FILE, "r", encoding="utf-8") as uf:
-            users = json.load(uf)
-        if not isinstance(users, list):
-            raise ValueError("users.json does not contain a list")
-        return users
-    except (OSError, json.JSONDecodeError, ValueError) as e:
-        print(f"[data_manager] Warning: failed to load users ({e}). Attempting restore from backup...")
-        if restore_latest_backup(USERS_FILE):
-            try:
-                with open(USERS_FILE, "r", encoding="utf-8") as uf:
-                    users = json.load(uf)
-                if isinstance(users, list):
-                    return users
-            except Exception:
-                pass
-        print(f"[data_manager] Warning: failed to load users after restore. Returning empty list.")
+        with open(file_path, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except (json.JSONDecodeError , FileNotFoundError):
+        print (f"[Warning] could not read {file_path} Returning empty list.")
         return []
+    
+
+    
+# Save JSON data to a file
+def save_json(file_path: str, data: List[Dict[str, Any]]):  # takes two parameters: file_path (a string representing the path to the file where the data will be saved) and data (a list of dictionaries containing the  actual data to be saved).
+    """Save JSON data to a file."""
+    ensure_data_dir()
+    #create backup before saving
+    if os.path.exists(file_path):
+        backup_file = f"{file_path}.bak"  # create a backup copy before saving to ensure there is no data missed.
+        os.replace(file_path, backup_file)  # move the copy of original file.
+    with open(file_path, 'w', encoding='utf-8') as f:
+        json.dump(data, f, indent=4) #Converts your Python data into JSON text and writes it into the file.
 
 
-def save_users(users: List[dict]) -> None:
+
+# === Specialized functions ===
+#load and save users
+def load_users() -> List[Dict[str, Any]]: # returns a list of dictionaries, where each dictionary represents a user and contains key-value pairs for user attributes.
+    """Load user data from users.json."""
+    return load_json(USERS_FILE)
+def save_users(users: List[Dict[str, Any]]):
+    """Save user data to users.json."""
+    save_json(USERS_FILE, users)
+
+
+#load and save transactions
+def load_transactions() -> List[Dict[str, Any]]:
+    """Load transaction data from transactions.json."""
+    return load_json(TRANSACTIONS_FILE)
+def save_transactions(transactions: List[Dict[str, Any]]):
+    """Save transaction data to transactions.json."""
+    save_json(TRANSACTIONS_FILE, transactions)
+
+
+# === Auto-Save System ===
+def auto_save(users: List[Dict[str, Any]], transactions: List[Dict[str, Any]], force: bool = False):
     """
-    Save users list to USERS_FILE only.
-    Creates a timestamped backup of users.json, writes atomically.
+    Automatically save data at regular intervals or when forced.
+    - users: list of user dictionaries
+    - transactions: list of transaction dictionaries
+    - force: True forces save immediately
     """
-    ensure_data_files()
-    _make_backup(USERS_FILE)
 
-    try:
-        tmp_users = f"{USERS_FILE}.tmp"
-        with open(tmp_users, "w", encoding="utf-8") as f:
-            json.dump(users, f, indent=2, ensure_ascii=False)
-        os.replace(tmp_users, USERS_FILE)
-    except OSError as e:
-        print(f"[data_manager] Error saving users ({e}). Attempting to restore backup...")
-        restore_latest_backup(USERS_FILE)
-        raise RuntimeError(f"Failed to save users file: {e}")
-# ...existing code...
+    global _last_auto_save, _save_counter
+    current_time = time.time()
+    if force or (current_time - _last_auto_save) >= AUTO_SAVE_INTERVAL:
+        save_users(users)
+        save_transactions(transactions)
+        _last_auto_save = current_time
+        _save_counter += 1
+        print(f"[Auto-Save] Data saved automatically at {datetime.now().strftime('%H:%M:%S')}")
+
+         # Create a timestamped backup every 5 auto-saves
+        if _save_counter % 5 == 0:
+            print("[Auto-Save] Creating periodic backup...")
+            backup_all()
+
+# === Shutdown Save ===
+def shutdown_save(users: List[Dict[str, Any]], transactions: List[Dict[str, Any]]):
+    """Force save everything before exiting the program."""
+    print("[Shutdown] Saving all data before exit...")
+    auto_save(users, transactions, force=True)
+    print("[Shutdown] All data saved successfully.")
+
+
+# === Backup and Restore ===
+def backup_all():
+    """Backup both JSON files with timestamps."""
+    ensure_data_dir()
+    
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S") # Generate timestamp for backup filenames (string format time like "20240615_123456")
+    for file in [USERS_FILE, TRANSACTIONS_FILE]:   # Iterate over both files to back up
+        if os.path.exists(file):
+            filename = os.path.basename(file) # returns just the file’s name, without the folder part to store the backup inside another folder (data/backups/)
+            backup_name = os.path.join(BACKUP_DIR, f"{filename}_{timestamp}.bak") #creates the full file path for unique names and safe locations 
+            os.replace(file, backup_name) # Move original file to backup location
+            print(f"[Backup] Created {backup_name}")

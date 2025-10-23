@@ -1,202 +1,158 @@
-# ...existing code...
 """
-reports.py - Generate reports and summaries.
+reports.py - Generates financial reports from transaction data.
 
-Handles:
-- Monthly spending reports
-- Category breakdowns
-- Dashboard summaries
-- Spending trends analysis
+Includes:
+- Dashboard summary
+- Monthly report
+- Category breakdown
+- Spending trends
 """
-from collections import defaultdict, Counter
-from datetime import datetime
-import transactions
-import auth
-from typing import List, Dict, Any, Optional
+
+from collections import defaultdict # For category breakdown
+from datetime import datetime # For date handling
+from decimal import Decimal, ROUND_HALF_UP  # For monetary calculations
+from typing import List, Dict, Any, Optional # Type hints
+from core.data_manager import load_transactions  # Load transaction data
+from core.search_filter import round_money # For rounding monetary values
+#from core.auth import current_user_id # Current user context
 
 
-def _parse_date(d: Optional[str]):
-    if not d:
-        return None
-    try:
-        # Accept ISO-like strings or plain YYYY-MM-DD
-        return datetime.fromisoformat(str(d)).date()
-    except Exception:
-        try:
-            return datetime.strptime(str(d), "%Y-%m-%d").date()
-        except Exception:
-            return None
+#####DASHBOARD SUMMARY#####
+def dashboard_summary(transactions: List[Dict[str, Any]]) -> Dict[str, Decimal]:
+    """Return a simple summary: total income, total expenses, and balance."""
+    total_income = Decimal('0.00')
+    total_expenses = Decimal('0.00')
 
+    for txn in transactions:
+        amount = Decimal(str(txn.get("amount", "0")))
+        if txn.get("type") == "income":
+            total_income += amount
+        elif txn.get("type") == "expense":
+            total_expenses += amount
 
-def _safe_float(v):
-    try:
-        return float(v)
-    except Exception:
-        return 0.0
-
-
-def _get_user_txns() -> List[Dict[str, Any]]:
-    """Return transactions for the current user (safe if auth/transactions helpers missing)."""
-    uid = None
-    try:
-        uid = transactions._current_user_id()
-    except Exception:
-        pass
-    if uid is None and getattr(auth, "current_user", None):
-        uid = auth.current_user.get("user_id")
-    if uid is None:
-        return []
-    return [tx for tx in transactions.TRANSACTIONS if tx.get("user_id") == uid]
-
-
-def _format_amount(a: float) -> str:
-    return f"{a:,.2f}"
-
-
-def dashboard_summary():
-    """Print a simple dashboard: totals, counts, top categories, last transactions."""
-    txns = _get_user_txns()
-    clear = lambda: None
-    total_income = 0.0
-    total_expense = 0.0
-    for t in txns:
-        amt = _safe_float(t.get("amount", 0))
-        ttype = str(t.get("type", "")).lower()
-        # treat "income" as positive, others as expense if type specified
-        if ttype == "income":
-            total_income += amt
-        else:
-            # if type is "expense" or unknown, consider negative flow towards expenses
-            total_expense += amt
-
-    net = total_income - total_expense
-    count = len(txns)
-    avg = (sum(_safe_float(t.get("amount", 0)) for t in txns) / count) if count else 0.0
-
-    # top categories
-    cat_sums = defaultdict(float)
-    for t in txns:
-        cat = t.get("category") or "Uncategorized"
-        cat_sums[cat] += _safe_float(t.get("amount", 0))
-
-    top_categories = sorted(cat_sums.items(), key=lambda x: x[1], reverse=True)[:5]
+    balance = total_income - total_expenses
 
     print("📊 DASHBOARD SUMMARY")
-    print("-" * 40)
-    print(f"Transactions: {count}")
-    print(f"Total income : { _format_amount(total_income)}")
-    print(f"Total expense: { _format_amount(total_expense)}")
-    print(f"Net          : { _format_amount(net)}")
-    print(f"Average txn  : { _format_amount(avg)}")
-    print()
-    print("Top categories:")
-    if top_categories:
-        for cat, val in top_categories:
-            print(f" - {cat:20} { _format_amount(val)}")
-    else:
-        print(" No categories to show.")
-    print()
-    print("Most recent transactions:")
-    recent = sorted(txns, key=lambda x: _parse_date(x.get("date")) or datetime.min.date(), reverse=True)[:5]
-    if recent:
-        for t in recent:
-            d = _parse_date(t.get("date"))
-            print(f"[{t.get('transaction_id')}] {d or ''} {str(t.get('type','')).upper():7} "
-                  f"{_format_amount(_safe_float(t.get('amount',0))):>12} {t.get('category','')}")
-    else:
-        print(" No transactions.")
-    input("\nPress Enter to return...")
+    print("-" * 30)
+    return {
+        "total_income": round_money(total_income),
+        "total_expense": round_money(total_expenses),
+        "balance": round_money(balance)
+    }
 
 
-def monthly_reports(last_n: int = 12):
-    """Show monthly totals for the last_n months (income, expense, net)."""
-    txns = _get_user_txns()
-    by_month = defaultdict(lambda: {"income": 0.0, "expense": 0.0})
-    for t in txns:
-        d = _parse_date(t.get("date"))
-        if not d:
-            continue
-        key = d.strftime("%Y-%m")
-        amt = _safe_float(t.get("amount", 0))
-        ttype = str(t.get("type", "")).lower()
-        if ttype == "income":
-            by_month[key]["income"] += amt
-        else:
-            by_month[key]["expense"] += amt
+########### monthly reports ###########
+def monthly_reports(transactions: List[Dict[str, Any]]) -> Dict[str, Dict[str, Decimal]]:
+    """Summarize transactions by month."""
+    monthly_data = defaultdict(lambda: {"income": Decimal('0.00'), "expense": Decimal('0.00')})
 
-    months = sorted(by_month.keys(), reverse=True)[:last_n]
-    if not months:
-        print("No monthly data available.")
-        input("Press Enter to return...")
-        return
+    for txn in transactions:
+        try:
+            date_obj = datetime.strptime(txn.get("date"), "%Y-%m-%d")
+            month_key = date_obj.strftime("%Y-%m")
+            amount = Decimal(str(txn.get("amount", "0")))
+            if txn.get("type") == "income":
+                monthly_data[month_key]["income"] += amount
+            elif txn.get("type") == "expense":
+                monthly_data[month_key]["expense"] += amount
+
+        except Exception:
+            continue  # Skip malformed dates or amounts
+   
+    # Round amounts
+    for month in monthly_data:
+        monthly_data[month]["income"] = round_money(monthly_data[month]["income"])
+        monthly_data[month]["expense"] = round_money(monthly_data[month]["expense"])
 
     print("📅 MONTHLY REPORTS")
-    print("-" * 50)
-    print(f"{'Month':10} {'Income':>12} {'Expense':>12} {'Net':>12}")
-    for m in sorted(months):
-        inc = by_month[m]["income"]
-        exp = by_month[m]["expense"]
-        net = inc - exp
-        print(f"{m:10} { _format_amount(inc):>12} { _format_amount(exp):>12} { _format_amount(net):>12}")
-    input("\nPress Enter to return...")
+    print("-" * 30)
+    return dict(monthly_data)
 
 
-def category_breakdown():
-    """Show spend/income breakdown by category (totals and percentage)."""
-    txns = _get_user_txns()
-    totals = defaultdict(float)
-    overall = 0.0
-    for t in txns:
-        cat = t.get("category") or "Uncategorized"
-        amt = _safe_float(t.get("amount", 0))
-        totals[cat] += amt
-        overall += amt
+########### category breakdown ###########
+def category_breakdown(transactions: List[Dict[str, Any]]) -> Dict[str, Decimal]:
+    """Return total expenses grouped by category."""
+    category_data = defaultdict(Decimal)
 
-    if not totals:
-        print("No category data available.")
-        input("Press Enter to return...")
-        return
+    for txn in transactions:
+        if txn.get("type") == "expense":
+            category = txn.get("category", "Uncategorized")
+            amount = Decimal(str(txn.get("amount", "0")))
+            category_data[category] += amount
 
-    breakdown = sorted(totals.items(), key=lambda x: x[1], reverse=True)
+    # Round amounts
+    for category in category_data:
+        category_data[category] = round_money(category_data[category])
+
     print("📂 CATEGORY BREAKDOWN")
-    print("-" * 50)
-    print(f"{'Category':25} {'Amount':>12} {'% of total':>12}")
-    for cat, val in breakdown:
-        pct = (val / overall * 100) if overall else 0.0
-        print(f"{cat:25} { _format_amount(val):>12} {pct:11.2f}%")
-    input("\nPress Enter to return...")
+    print("-" * 30)
+    return dict(category_data)
 
 
-def spending_trends(months: int = 6):
-    """Show a simple trend (monthly totals) for the last `months` months."""
-    txns = _get_user_txns()
-    monthly = defaultdict(float)
-    for t in txns:
-        d = _parse_date(t.get("date"))
-        if not d:
-            continue
-        key = d.strftime("%Y-%m")
-        monthly[key] += _safe_float(t.get("amount", 0))
+########### spending trends ###########
+def spending_trends(transactions: List[Dict[str, Any]]) -> Dict[str, Decimal]:
+    """Return monthly expense trend (for visualization or analysis)."""
+    trends = defaultdict(Decimal)
 
-    if not monthly:
-        print("No trend data available.")
-        input("Press Enter to return...")
-        return
+    for txn in transactions:
+        if txn.get("type") == "expense":
+            try:
+                date_obj = datetime.strptime(txn.get("date"), "%Y-%m-%d")
+                month_key = date_obj.strftime("%Y-%m")
+                #amount = Decimal(str(txn.get("amount", "0")))
+                trends[month_key] += Decimal(str(txn.get("amount")))
+            except Exception:
+                continue  # Skip malformed dates or amounts
 
-    keys = sorted(monthly.keys())[-months:]
-    values = [monthly[k] for k in keys]
-    maxv = max(values) if values else 1.0
-
-    def bar(v, width=40):
-        if maxv == 0:
-            return ""
-        filled = int((v / maxv) * width)
-        return "█" * filled
+    # Round amounts
+    for month in trends:
+        trends[month] = round_money(trends[month])
 
     print("📈 SPENDING TRENDS")
-    print("-" * 60)
-    for k in keys:
-        v = monthly[k]
-        print(f"{k} { _format_amount(v):>12} | {bar(v)}")
-    input("\nPress Enter to return...")
-# ...existing code...
+    print("-" * 30)
+    return dict(trends)
+
+
+
+######## testing the reports output ########
+if __name__ == "__main__":
+    from decimal import Decimal
+
+    # 🧪 Example transaction data to test all reports
+    sample_transactions = [
+        {"date": "2025-01-15", "type": "income", "amount": "5000.00", "category": "Salary"},
+        {"date": "2025-01-18", "type": "expense", "amount": "1200.00", "category": "Rent"},
+        {"date": "2025-01-20", "type": "expense", "amount": "400.00", "category": "Food"},
+        {"date": "2025-02-10", "type": "income", "amount": "4800.00", "category": "Salary"},
+        {"date": "2025-02-15", "type": "expense", "amount": "300.00", "category": "Transport"},
+        {"date": "2025-02-18", "type": "expense", "amount": "700.00", "category": "Shopping"},
+        {"date": "2025-03-05", "type": "expense", "amount": "350.00", "category": "Food"},
+    ]
+
+    # === Test 1: Dashboard summary ===
+    print("\n=== Dashboard Summary ===")
+    from reports import dashboard_summary
+    summary = dashboard_summary(sample_transactions)
+    for key, val in summary.items():
+        print(f"{key}: {val}")
+
+    # === Test 2: Monthly Report ===
+    print("\n=== Monthly Report ===")
+    from reports import monthly_reports
+    monthly = monthly_reports(sample_transactions)
+    for month, data in monthly.items():
+        print(f"{month}: {data}")
+
+    # === Test 3: Category Breakdown ===
+    print("\n=== Category Breakdown ===")
+    from reports import category_breakdown
+    cats = category_breakdown(sample_transactions)
+    for cat, amt in cats.items():
+        print(f"{cat}: {amt}")
+
+    # === Test 4: Spending Trends ===
+    print("\n=== Spending Trends ===")
+    from reports import spending_trends
+    trends = spending_trends(sample_transactions)
+    for month, total in trends.items():
+        print(f"{month}: {total}")

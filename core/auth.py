@@ -9,7 +9,7 @@ Provides:
 # modules/user_management.py
 # Handles user registration, login, and profile management (simple version — no getpass, no uuid, no hashing)
 
-import data_manager
+from core import data_manager
 
 # Load users from disk (users only, no transactions)
 try:

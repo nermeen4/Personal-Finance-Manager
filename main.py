@@ -11,11 +11,14 @@ def clear_screen():
     print("\033c", end="")
 
 # ===== MODULE IMPORTS =====
-from core import transactions
-from core import search_filter
+from core.data_manager import load_transactions
 from core import auth  # ✅ Import the real user management module
-from core import reports
-from core import ascii_viz
+from core import transactions  # ✅ Import the real transactions module
+from core.reports import dashboard_summary, monthly_reports, category_breakdown, spending_trends
+from core.search_filter import apply_filters, round_money
+from decimal import Decimal
+
+
 
 # ========== TRANSACTIONS ==========
 # Backward-compat shim in case other code calls it
@@ -24,74 +27,96 @@ def transactions_menu():
 
 # ========== REPORTS ==========
 def reports_menu():
-    while True:
-        clear_screen()
-        print("📊 REPORTS")
+    transactions = load_transactions()
+
+    print("\n📊 REPORTS MENU")
+    print("📊 REPORTS")
+    print("-" * 30)
+    print("1) Dashboard summary")
+    print("2) Monthly reports")
+    print("3) Category breakdown")
+    print("4) Spending trends")
+    print("0) Back to main menu")
+    choice = input("\nSelect an option: ").strip()
+
+    if choice == "1":   
+        summary = dashboard_summary(transactions)
+        print(f"\nTotal Income: {summary['total_income']}")
+        print(f"Total Expense: {summary['total_expense']}")
+        print(f"Balance: {summary['balance']}")
+
+    elif choice == "2":
+        monthly = monthly_reports(transactions)
+        print("\n📅 MONTHLY REPORTS")
         print("-" * 30)
-        print("1) Dashboard summary")
-        print("2) Monthly reports")
-        print("3) Category breakdown")
-        print("4) Spending trends")
-        print("0) Back to main menu")
-        choice = input("\nSelect an option: ").strip()
+        for month, data in sorted(monthly.items()):
+            income = round_money(data['income'])
+            expense = round_money(data['expense'])
+            print(f"{month}: Income: {income}, Expense: {expense}")
 
-        if choice == "0":
-            break
-        elif choice == "1":
-            reports.dashboard_summary()
-        elif choice == "2":
-            reports.monthly_reports()
-        elif choice == "3":
-            reports.category_breakdown()
-        elif choice == "4":
-            reports.spending_trends()
-        else:
-            print("❌ Invalid option.")
-            input("Press Enter to continue...")
+    elif choice == "3":
+        breakdown = category_breakdown(transactions)
+        print("\n📂 CATEGORY BREAKDOWN")
+        print("-" * 30)
+        for category, amount in sorted(breakdown.items()):
+            print(f"{category}: {round_money(amount)}")
+    
+    elif choice == "4":
+        trends = spending_trends(transactions)
+        print("\n📈 SPENDING TRENDS")
+        print("-" * 30)
+        for month, amount in sorted(trends.items()):
+            print(f"{month}: {round_money(amount)}")
 
-def dashboard_summary():
-    print("→ [Placeholder] Show dashboard summary.")
-    input("Press Enter to return...")
+    elif choice == "0":
+        return
+    
+    else:
+        print("❌ Invalid choice.")
+        input("\nPress Enter to continue...")
 
-def monthly_reports():
-    print("→ [Placeholder] Generate monthly reports.")
-    input("Press Enter to return...")
-
-def category_breakdown():
-    print("→ [Placeholder] Show category breakdown report.")
-    input("Press Enter to return...")
-
-def spending_trends():
-    print("→ [Placeholder] Display spending trends.")
-    input("Press Enter to return...")
 
 # ========== SEARCH & FILTER ==========
-def search_filter_menu():
-    while True:
-        clear_screen()
-        print("🔍 SEARCH & FILTER")
-        print("-" * 30)
-        print("1) Search by date range")
-        print("2) Filter by category")
-        print("3) Amount range filter")
-        print("4) Sort results")
-        print("0) Back to main menu")
-        choice = input("\nSelect an option: ").strip()
+def search_and_filter_menu():
+    transactions = load_transactions()
+    print("\n🔍 Transaction Search & Filter")
 
-        if choice == "0":
-            break
-        elif choice == "1":
-            search_filter.search_by_date()
-        elif choice == "2":
-            search_filter.filter_by_category()
-        elif choice == "3":
-            search_filter.amount_range_filter()
-        elif choice == "4":
-            search_filter.sort_results()
-        else:
-            print("❌ Invalid option.")
-            input("Press Enter to continue...")
+    start_date = input("Start date (YYYY-MM-DD): ").strip()
+    end_date = input("End date (YYYY-MM-DD): ").strip()
+    category = input("Category: ").strip()
+    min_amount = input("Min amount: ").strip()
+    max_amount = input("Max amount: ").strip()
+    keyword = input("Keyword: ").strip()
+    sort_by = input("Sort by (date/amount/category/type): ").strip() or "date"
+    reverse = input("Sort descending? (y/n): ").strip().lower() == "y"
 
+    # Convert amounts safely
+    min_amount = Decimal(min_amount) if min_amount else None
+    max_amount = Decimal(max_amount) if max_amount else None
+
+    # Apply all filters
+    filtered_txns = apply_filters(
+        transactions,
+        start_date=start_date or None,
+        end_date=end_date or None,
+        category=category or None,
+        min_amount=min_amount,
+        max_amount=max_amount,
+        keyword=keyword or None,
+        sort_by=sort_by,
+        reverse=reverse
+    )
+
+    # Show results
+    if not filtered_txns:
+        print("\n⚠️ No matching transactions found.")
+    else:
+        print(f"\n✅ Found {len(filtered_txns)} transactions:\n")
+        for txn in filtered_txns:
+            amount = round_money(Decimal(txn['amount']))  # ✅ formatted nicely
+            print(f"{txn['date']} | {txn['category']} | {amount} | {txn['description']}")
+
+    return filtered_txns  # ✅ makes it reusable for reports/export
 
 # ========== MAIN MENU ==========
 def main_menu():
@@ -111,17 +136,29 @@ def main_menu():
         if choice == "0":
             print("\n👋 Exiting program. Goodbye!")
             break
+
+        # call user management menu
         elif choice == "1":
-            # ✅ Call the real user management menu
             auth.user_management_menu()
+        
+        #call transactions menu
         elif choice == "2":
             transactions.transactions_menu()
+
+        
+        # call reports menu
         elif choice == "3":
             reports_menu()
+
+        # call search & filter menu
         elif choice == "4":
-            search_filter_menu()
-        elif choice == "5":
-            ascii_viz.ascii_viz_menu()
+            filtered = search_and_filter_menu()
+            if filtered:
+                print("\n✅ You can now generate a report or export these results.")
+                # (later you could call a reports function here)
+            else:
+                print("\n⚠️ No data to report.")
+            
         else:
             print("❌ Invalid choice.")
             input("Press Enter to continue...")

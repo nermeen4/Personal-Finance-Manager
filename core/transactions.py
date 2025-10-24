@@ -8,8 +8,7 @@ Includes:
 - Input validation and categorization
 """
 from datetime import date
-import auth
-import data_manager
+from core import data_manager, auth
 
 TRANSACTIONS = []
 _next_id = 1

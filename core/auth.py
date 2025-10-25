@@ -19,43 +19,67 @@ except Exception:
 
 current_user = None
 
-def _compute_next_user_id(u_list):
-    if not u_list:
+def _compute_next_user_id(user_list):
+    # If the user list is empty, start IDs from 1
+    if not user_list:
         return 1
-    nums = []
-    for u in u_list:
-        uid = u.get("user_id", "")
-        try:
-            # accept formats like U001, u1, etc.
-            nums.append(int(''.join(ch for ch in uid if ch.isdigit()) or 0))
-        except Exception:
-            continue
-    return (max(nums) + 1) if nums else (len(u_list) + 1)
+    # store all the numeric parts of user IDs
+    nums = []  
+
+    # Go through each user in the list
+    for user in user_list:
+        # Get the user_id value, or empty string if missing
+        uid = user.get("user_id", "")  
+
+        digits = ""  # To collect digits from the user_id
+
+        # Loop through each character in the user_id
+        for ch in uid:
+            if ch.isdigit():  # Check if it's a number
+                digits += ch  # Add the number character to the digits string
+
+        # Convert digits to an integer, or use 0 if there were no digits
+        if digits == "":
+            number = 0
+        else:
+            number = int(digits)
+        # Add this number to our list
+        nums.append(number)  
+
+    # If found any numbers get the next one after the highest
+    if nums:
+        next_id = max(nums) + 1
+    else:
+        # If no numbers found use the list length + 1
+        next_id = len(user_list) + 1
+
+    # Return the next available userid number
+    return next_id
+
 
 next_id = _compute_next_user_id(users)
 
 
 def clear_screen():
-    """Clear the console screen."""
+    #Clear the console screen.
     print("\033c", end="")
 
 
 def _save_users():
-    """Persist users list using data_manager.save_users."""
     try:
         data_manager.save_users(users)
-    except Exception as e:
-        print(f"[auth] Warning: failed to save users ({e})")
+    except Exception:
+        print("[auth] Warning: failed to save users.")
 
 
 def user_management_menu():
-    """Display and handle the User Management submenu."""
+    # Display and handle the User Management submenu.
     global current_user
 
     while True:
         clear_screen()
-        print("👤 USER MANAGEMENT")
-        print("-" * 35)
+        print("USER MANAGEMENT")
+        print("-" * 40)
         print(f"Current user: {current_user['name'] if current_user else 'None'}")
         print("\n1) Register new user")
         print("2) Login with password")
@@ -75,107 +99,150 @@ def user_management_menu():
         elif choice == "4":
             switch_profile()
         else:
-            print("❌ Invalid option.")
+            print("Invalid option.")
             input("Press Enter to continue...")
 
 
 def register_user():
-    """Register a new user with name, password, and currency."""
+    #Register a new user with name password currency.
     global users, next_id
     clear_screen()
-    print("➕ Register New User")
-    print("-" * 30)
+    print("Register New User")
+    print("-" * 40)
 
     name = input("Enter full name: ").strip()
     password = input("Enter password: ").strip()
     confirm = input("Confirm password: ").strip()
 
     if password != confirm:
-        print("❌ Passwords do not match.")
-        input("Press Enter to return...")
+        print("Password doesn't match.")
+        input("Press Enter to return.")
         return
 
-    currency = input("Preferred currency (e.g., USD, EUR, EGP): ").strip().upper() or "USD"
+    currency = input("Preferred currency: ").strip().upper() or "EGP"
 
-    if any(u["name"].lower() == name.lower() for u in users):
-        print("⚠️  A user with that name already exists.")
+    # Check if a user with the same name already exists
+    user_exists = False
+
+    for user in users:
+        # Compare names without worrying about uppercase/lowercase
+        if user["name"].lower() == name.lower():
+            user_exists = True
+            break  # No need to keep checking once we find a match
+
+    if user_exists:
+        print("A user with that name already exists.")
     else:
+        # Create a new user dictionary
         user = {
-            "user_id": f"U{next_id:03d}",
+            # Format ID like U001, U002, etc.
+            "user_id": "U" + str(next_id).zfill(3),  
             "name": name,
-            "password": password,  # plain text (consider hashing later)
-            "currency": currency,
+            "password": password,
+            "currency": currency
         }
+
+        # Add the new user to the list
         users.append(user)
-        next_id += 1
-        # persist users only
+
+        # Increase the ID counter for the next user
+        next_id = next_id + 1
+
+
+        # Save the updated users list
         _save_users()
-        print(f"✅ User '{name}' registered successfully.")
-    input("\nPress Enter to return...")
+
+        print(f"User {name} registered successfully.")
+
+    # Pause before going back to the main menu
+    input("\n Press Enter to return.")
+
 
 
 def login_user():
-    """Authenticate existing user using plain password."""
+    #login user by name and password
+
     global current_user
+
     clear_screen()
-    print("🔐 User Login")
-    print("-" * 30)
+
+    print("User Login")
+    print("-" * 40)
     name = input("Enter username: ").strip()
     password = input("Enter password: ").strip()
 
-    for u in users:
-        if u["name"].lower() == name.lower() and u["password"] == password:
-            current_user = u
-            print(f"✅ Welcome, {u['name']} ({u['currency']})!")
-            input("\nPress Enter to return...")
+    # check for a user with this name and password
+    for user in users:
+        if user["name"].lower() == name.lower() and user["password"] == password:
+            #if found, set as current user instead of none
+            current_user = user
+            print(f"Welcome, {user['name']}!")
+            input("\n Press Enter to return.")
             return
-    print("❌ Invalid username or password.")
-    input("\nPress Enter to return...")
+    print("Invalid username or password.")
+    input("\n Press Enter to return.")
 
 
 def list_users():
-    """List all registered users."""
+    # list all registered users.
     clear_screen()
-    print("👥 Registered Users")
-    print("-" * 30)
+    print("Registered Users")
+    print("-" * 40)
     if not users:
         print("No users found.")
     else:
-        for u in users:
-            mark = "⭐ (current)" if current_user and u["user_id"] == current_user["user_id"] else ""
-            print(f"ID: {u['user_id']} | Name: {u['name']} | Currency: {u['currency']} {mark}")
+        for user in users:
+            print(f"ID: {user['user_id']} | Name: {user['name']} | Currency: {user['currency']}")
     input("\nPress Enter to return...")
 
 
-# ...existing code...
 def switch_profile():
-    """Switch to another user profile (requires password)."""
+    # Switch to a different user profile.
     global current_user
+
+    # Clear the screen for better readability
     clear_screen()
-    print("🔄 Switch Profile")
+    print("Switch Profile")
     print("-" * 30)
+
+    # Check if there are any users to switch to
     if not users:
         print("No users available.")
         input("\nPress Enter to return...")
+        return  # Stop here if no users exist
+
+    # display all users
+    index = 1
+    for u in users:
+        print(f"{index}) {u['name']} ({u['currency']})")
+        index += 1
+
+    # Ask the user to pick one of the listed profiles and convert input to a number
+    choice_input = input("\nEnter the number of user to switch to: ").strip()
+    try:
+        choice = int(choice_input)
+    except ValueError:
+        print("Invalid input. Please enter a number.")
+        input("\nPress Enter to return...")
         return
 
-    idx = 1
-    for u in users:
-        print(f"{idx}) {u['name']} ({u['currency']})")
-        idx += 1
+    # Check if the chosen number is within the valid range
+    if choice < 1 or choice > len(users):
+        print("Invalid selection.")
+        input("\nPress Enter to return...")
+        return
 
-    try:
-        choice = int(input("\nEnter the number of user to switch to: ").strip())
-        if 1 <= choice <= len(users):
-            candidate = users[choice - 1]
-            pw = input(f"Enter password for {candidate['name']}: ").strip()
-            if pw == candidate.get("password", ""):
-                current_user = candidate
-                print(f"✅ Switched to {current_user['name']}.")
-            else:
-                print("❌ Incorrect password. Profile not switched.")
-        else:
-            print("❌ Invalid selection.")
-    except ValueError:
-        print("❌ Invalid input.")
-    input("\nPress Enter to return...")
+    # Get the selected user (list index starts at 0)
+    candidate = users[choice - 1]
+
+
+    # ask for that user's password and check it
+    password = input(f"Enter password for {candidate['name']}: ").strip()
+    if password == candidate.get("password", ""):
+        current_user = candidate
+        print(f"Switched to {current_user['name']}.")
+    else:
+        print("Incorrect password.")
+
+    # Pause before returning
+    input("\n Press Enter to return.")

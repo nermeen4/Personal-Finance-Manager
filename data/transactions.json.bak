@@ -58,15 +58,5 @@
         "date": "2025-10-26",
         "description": "",
         "payment_method": "Cash"
-    },
-    {
-        "transaction_id": "TXN005",
-        "user_id": "U001",
-        "type": "income",
-        "amount": 99.0,
-        "category": "food",
-        "date": "2025-10-26",
-        "description": "",
-        "payment_method": "Cash"
     }
 ]

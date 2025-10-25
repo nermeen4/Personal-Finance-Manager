@@ -54,14 +54,13 @@ def compute_next_id(txns):
 def _save_transactions():
     #save transactions using data_manager.save_data by loading current users then saving both.
     try:
-        users = data_manager.load_users() or []
-        data_manager.save_data(users, transactions)
+        data_manager.save_transactions(transactions)
     except Exception as e:
         print(f"[transactions] Warning: failed to save transactions ({e})")
 
 # Load transactions on import
 try:
-    loaded_txns = data_manager.load_data()
+    loaded_txns = data_manager.load_transactions()
     if loaded_txns:
         transactions = loaded_txns
 except Exception:

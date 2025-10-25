@@ -12,10 +12,10 @@ from collections import defaultdict # For category breakdown
 from datetime import datetime # For date handling
 from decimal import Decimal, ROUND_HALF_UP  # For monetary calculations
 from typing import List, Dict, Any, Optional # Type hints
-from data_manager import load_transactions  # Load transaction data
-from search_filter import round_money # For rounding monetary values
+from core import data_manager  # Load transaction data
+from core.search_filter import round_money # For rounding monetary values
 #from core.auth import current_user_id # Current user context
-from ascii_viz import category_barchart, monthly_barchart, trend_chart
+from core.ascii_viz import category_barchart, monthly_barchart, trend_chart
 
 
 #####DASHBOARD SUMMARY#####

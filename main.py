@@ -29,9 +29,7 @@ def transactions_menu():
 # ========== REPORTS ==========
 def reports_menu():
     transactions = load_transactions()
-
     print("\n📊 REPORTS MENU")
-    print("📊 REPORTS")
     print("-" * 30)
     print("1) Dashboard summary")
     print("2) Monthly reports")
@@ -45,6 +43,8 @@ def reports_menu():
         print(f"\nTotal Income: {summary['total_income']}")
         print(f"Total Expense: {summary['total_expense']}")
         print(f"Balance: {summary['balance']}")
+        input("Press Enter to return")
+        reports_menu() 
 
     elif choice == "2":
         monthly = monthly_reports(transactions)
@@ -54,6 +54,9 @@ def reports_menu():
             income = round_money(data['income'])
             expense = round_money(data['expense'])
             print(f"{month}: Income: {income}, Expense: {expense}")
+        
+        input("Press Enter to return")
+        reports_menu() 
 
     elif choice == "3":
         breakdown = category_breakdown(transactions)
@@ -61,17 +64,20 @@ def reports_menu():
         print("-" * 30)
         for category, amount in sorted(breakdown.items()):
             print(f"{category}: {round_money(amount)}")
-    
+        input("Press Enter to return")
+        reports_menu()
+
     elif choice == "4":
         trends = spending_trends(transactions)
         print("\n📈 SPENDING TRENDS")
         print("-" * 30)
         for month, amount in sorted(trends.items()):
             print(f"{month}: {round_money(amount)}")
+        input("Press Enter to return")
+        reports_menu()
 
     elif choice == "0":
         return
-    
     else:
         print("❌ Invalid choice.")
         input("\nPress Enter to continue...")

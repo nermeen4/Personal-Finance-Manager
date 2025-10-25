@@ -12,9 +12,10 @@ from collections import defaultdict # For category breakdown
 from datetime import datetime # For date handling
 from decimal import Decimal, ROUND_HALF_UP  # For monetary calculations
 from typing import List, Dict, Any, Optional # Type hints
-from core.data_manager import load_transactions  # Load transaction data
-from core.search_filter import round_money # For rounding monetary values
+from data_manager import load_transactions  # Load transaction data
+from search_filter import round_money # For rounding monetary values
 #from core.auth import current_user_id # Current user context
+from ascii_viz import category_barchart, monthly_barchart, trend_chart
 
 
 #####DASHBOARD SUMMARY#####
@@ -113,7 +114,6 @@ def spending_trends(transactions: List[Dict[str, Any]]) -> Dict[str, Decimal]:
     return dict(trends)
 
 
-
 ######## testing the reports output ########
 if __name__ == "__main__":
     from decimal import Decimal
@@ -156,3 +156,11 @@ if __name__ == "__main__":
     trends = spending_trends(sample_transactions)
     for month, total in trends.items():
         print(f"{month}: {total}")
+
+
+##############ASCII VISUALIZATION UTILITIES##############
+    print("\n=== ASCII Charts ===")
+
+    category_barchart(category_breakdown(sample_transactions))
+    monthly_barchart(monthly_reports(sample_transactions))
+    trend_chart(spending_trends(sample_transactions))

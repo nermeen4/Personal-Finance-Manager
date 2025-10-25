@@ -17,6 +17,7 @@ from core import transactions  # ✅ Import the real transactions module
 from core.reports import dashboard_summary, monthly_reports, category_breakdown, spending_trends
 from core.search_filter import apply_filters, round_money
 from decimal import Decimal
+from core.ascii_viz import monthly_barchart  # Import ASCII visualization function
 
 
 
@@ -158,6 +159,15 @@ def main_menu():
                 # (later you could call a reports function here)
             else:
                 print("\n⚠️ No data to report.")
+                
+
+        # call ASCII visualization menu
+        elif choice == "5":
+            txns = load_transactions()
+            data = monthly_reports(txns)
+            monthly_barchart(data)
+           
+        
             
         else:
             print("❌ Invalid choice.")

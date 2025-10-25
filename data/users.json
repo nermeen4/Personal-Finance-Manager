@@ -16,9 +16,5 @@
     "name": "Nermeen",
     "password": "1234",
     "currency": "USD"
-  },
-  {
-    "id": 4,
-    "name": "Backup Tester"
   }
 ]

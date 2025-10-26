@@ -1,0 +1,57 @@
+[
+    {
+        "bill_id": "BILL001",
+        "user_id": "U001",
+        "name": "electricity",
+        "amount": 50.0,
+        "due_date": "2000-10-25",
+        "repeat": "monthly",
+        "payment_method": "cash",
+        "notes": "",
+        "paid": true
+    },
+    {
+        "bill_id": "BILL002",
+        "user_id": "U001",
+        "name": "food",
+        "amount": 60.0,
+        "due_date": "2025-10-26",
+        "repeat": "monthly",
+        "payment_method": "",
+        "notes": "",
+        "paid": false
+    },
+    {
+        "bill_id": "BILL003",
+        "user_id": "U001",
+        "name": "salary",
+        "amount": 90.0,
+        "due_date": "2025-10-28",
+        "repeat": "monthly",
+        "payment_method": "cash",
+        "notes": "",
+        "paid": false
+    },
+    {
+        "bill_id": "BILL004",
+        "user_id": "U003",
+        "name": "food",
+        "amount": 50.0,
+        "due_date": "2025-10-29",
+        "repeat": "none",
+        "payment_method": "",
+        "notes": "",
+        "paid": false
+    },
+    {
+        "bill_id": "BILL005",
+        "user_id": "U003",
+        "name": "salary",
+        "amount": 30.0,
+        "due_date": "2025-09-26",
+        "repeat": "monthly",
+        "payment_method": "cash",
+        "notes": "",
+        "paid": false
+    }
+]

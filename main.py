@@ -18,6 +18,7 @@ from core.reports import dashboard_summary, monthly_reports, category_breakdown,
 from core.search_filter import apply_filters, round_money
 from decimal import Decimal
 from core.ascii_viz import monthly_barchart  # Import ASCII visualization function
+from core import bill
 
 
 
@@ -137,6 +138,7 @@ def main_menu():
         print("3) 📊 Reports")
         print("4) 🔍 Search & Filter")
         print("5) 🖼️ ASCII Visuals")
+        print("6) 🔔 Bills & Reminders")
         print("0) Exit")
         choice = input("\nSelect an option: ").strip()
 
@@ -174,7 +176,9 @@ def main_menu():
             monthly_barchart(data)
            
         
-            
+        # call bills menu
+        elif choice == "6":
+            bill.bill_menu()
         else:
             print("❌ Invalid choice.")
             input("Press Enter to continue...")

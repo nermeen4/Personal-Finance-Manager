@@ -18,7 +18,7 @@ from core.reports import dashboard_summary, monthly_reports, category_breakdown,
 from core.search_filter import apply_filters, round_money
 from decimal import Decimal
 from core.ascii_viz import monthly_barchart  # Import ASCII visualization function
-from core import bill
+from advanced_features import save_goals, budget  # Advanced features modules
 
 
 
@@ -126,6 +126,45 @@ def search_and_filter_menu():
 
     return filtered_txns  # ✅ makes it reusable for reports/export
 
+
+
+# ========== ADVANCED FEATURES MENU ==========
+def advanced_features_menu():
+    while True:
+        clear_screen()
+        print("⚙️ ADVANCED FEATURES")
+        print("-" * 35)
+        print("1) 🎯 Savings Goals")
+        print("2) 💸 Monthly Budget Manager")
+        print("3) ⏰ Bill Reminders")
+        print("4) 📈 Financial Health Score")
+        print("0) Back to Main Menu")
+        choice = input("\nSelect an option: ").strip()
+
+        if choice == "1":
+            from advanced_features.save_goals import savings_menu
+            savings_menu()
+
+        elif choice == "2":
+            from advanced_features.budget import budgets_menu
+            budgets_menu()
+
+        #elif choice == "3":
+            #from core.advanced_features.reminders import reminders_menu
+            #reminders_menu()
+
+        #elif choice == "4":
+            #from core.advanced_features.health_score import health_score_menu
+            #health_score_menu()
+
+        elif choice == "0":
+            return
+        
+        else:
+            print("❌ Invalid choice.")
+            input("Press Enter to continue...")
+
+
 # ========== MAIN MENU ==========
 def main_menu():
     while True:
@@ -138,7 +177,7 @@ def main_menu():
         print("3) 📊 Reports")
         print("4) 🔍 Search & Filter")
         print("5) 🖼️ ASCII Visuals")
-        print("6) 🔔 Bills & Reminders")
+        print("6) ⚙️ Advanced Features")
         print("0) Exit")
         choice = input("\nSelect an option: ").strip()
 
@@ -175,13 +214,15 @@ def main_menu():
             data = monthly_reports(txns)
             monthly_barchart(data)
            
-        
-        # call bills menu
+    # call advanced features menu
         elif choice == "6":
-            bill.bill_menu()
-        else:
-            print("❌ Invalid choice.")
-            input("Press Enter to continue...")
+            advanced_features_menu()
+
+        
+            
+    else:
+        print("❌ Invalid choice.")
+        input("Press Enter to continue...")
 
 # ========== ENTRY POINT ==========
 if __name__ == "__main__":

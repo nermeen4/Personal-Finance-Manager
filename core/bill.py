@@ -131,6 +131,8 @@ def list_bills(show_all: bool = False):
     #if user is logged in
     uid = auth.current_user.get("user_id")
     user_bills = [b for b in _bills if b.get("user_id") == uid]
+
+
     #if no bills found for user
     if not user_bills:
         print("No bills found for current user.")
@@ -174,39 +176,36 @@ def _parse_date(s: str) -> Optional[date]:
     except Exception:
         return None
 
-def bills_due_on(check_date: Optional[date] = None, within_days: int = 0) -> List[Dict[str, Any]]:
-    """Return bills due on check_date or within next `within_days` days (for current user)."""
+
+
+def check_due_next_5_days():
+    #return unpaid bills for the current user due within the next 5 days."""
     if not auth.current_user:
         return []
     uid = auth.current_user.get("user_id")
-    if check_date is None:
-        check_date = date.today()
-    end_date = check_date + timedelta(days=within_days)
-    due = []
+    today = date.today()
+    end_date = today + timedelta(days=5)
+    due: List[Dict[str, Any]] = []
+
     for bill in _bills:
         if bill.get("user_id") != uid:
             continue
         d = _parse_date(bill.get("due_date", ""))
         if not d:
             continue
-        if check_date <= d <= end_date and not bill.get("paid", False):
+        if today <= d <= end_date and not bill["paid"]:
             due.append(bill)
-    return due
 
-def check_due_and_notify(within_days: int = 0):
-    """Print reminders for bills due today (within_days=0) or next N days."""
-    if not auth.current_user:
-        return
-    due = bills_due_on(date.today(), within_days=within_days)
-    if not due:
-        return
-    print("\n🔔 Bill Reminders")
-    print("-" * 40)
-    for b in due:
-        days = ( _parse_date(b["due_date"]) - date.today()).days
-        when = "today" if days == 0 else f"in {days} day(s)" if days > 0 else f"{-days} day(s) overdue"
-        print(f"{b['bill_id']}: {b['name']} — {b['amount']:.2f} due {b['due_date']} ({when})")
-    print("-" * 40)
+    if due:
+        print("\n Bills due in the next 5 days")
+        print("-" * 40)
+        for bill in due:
+            days = (_parse_date(bill["due_date"]) - today).days
+            when = "today" if days == 0 else f"in {days} day(s)" if days > 0 else f"{-days} day(s) overdue"
+            print(f"{bill['bill_id']}: {bill['name']} — {bill['amount']:.2f} due {bill['due_date']} ({when})")
+        print("-" * 40)
+    
+
 
 def bill_menu():
     while True:
@@ -216,7 +215,7 @@ def bill_menu():
         print("1) Add bill")
         print("2) List my bills")
         print("3) Mark bill paid")
-        print("4) Check due today")
+        print("4) Check due bills")
         print("0) Back")
         choice = input("\nChoose: ").strip()
         if choice == "0":
@@ -230,7 +229,7 @@ def bill_menu():
             mark_paid(bid)
         elif choice == "4":
             clear_screen()
-            check_due_and_notify(0)
+            check_due_next_5_days()
             pause()
         else:
             print("Invalid choice.")

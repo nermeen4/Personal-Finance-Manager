@@ -64,5 +64,27 @@
         "payment_method": "",
         "notes": "",
         "paid": false
+    },
+    {
+        "bill_id": "BILL007",
+        "user_id": "U001",
+        "name": "electric",
+        "amount": 500.0,
+        "due_date": "2025-10-27",
+        "repeat": "monthly",
+        "payment_method": "",
+        "notes": "",
+        "paid": false
+    },
+    {
+        "bill_id": "BILL008",
+        "user_id": "U001",
+        "name": "test",
+        "amount": 5.0,
+        "due_date": "2025-11-01",
+        "repeat": "none",
+        "payment_method": "",
+        "notes": "",
+        "paid": true
     }
 ]

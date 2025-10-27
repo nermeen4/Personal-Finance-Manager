@@ -17,7 +17,11 @@ from core import transactions
 from core.reports import dashboard_summary, monthly_reports, category_breakdown, spending_trends
 from core.search_filter import apply_filters, round_money
 from decimal import Decimal
-from core.ascii_viz import monthly_barchart 
+
+
+
+from core.ascii_viz import monthly_barchart  # Import ASCII visualization function
+
 from advanced_features import save_goals, budget  # Advanced features modules
 
 
@@ -215,9 +219,7 @@ def main_menu():
     # call advanced features menu
         elif choice == "6":
             advanced_features_menu()
-
-        
-            
+          
         else:
             print("❌ Invalid choice.")
             input("Press Enter to continue...")

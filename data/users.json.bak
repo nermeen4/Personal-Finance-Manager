@@ -1,0 +1,20 @@
+[
+  {
+    "user_id": "U001",
+    "name": "mohamed",
+    "password": "123",
+    "currency": "EUR"
+  },
+  {
+    "user_id": "U002",
+    "name": "test1",
+    "password": "123",
+    "currency": "EGP"
+  },
+  {
+    "user_id": "U003",
+    "name": "Nermeen",
+    "password": "1234",
+    "currency": "USD"
+  }
+]

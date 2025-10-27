@@ -8,7 +8,9 @@ Features:
 """
 from datetime import datetime, date, timedelta
 from typing import List, Dict, Any, Optional
-from . import data_manager, auth
+from core import data_manager, auth
+from decimal import Decimal
+
 import os
 # create new bills file to put the bills data
 BILLS_FILE = os.path.join(data_manager.DATA_DIR, "bills.json")
@@ -79,7 +81,7 @@ def add_bill():
 
     #validate amount and date
     try:
-        amount = float(input("Amount: ").strip())
+        amount = Decimal(input("Amount: ").strip())
     except Exception:
         print("Invalid amount.")
         pause()

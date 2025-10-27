@@ -9,6 +9,7 @@ Includes:
 """
 from datetime import date
 from core import data_manager, auth
+from decimal import Decimal
 
 transactions = []
 #next_id = 1
@@ -67,7 +68,7 @@ except Exception:
     transactions = []
 
 # init next id based on loaded transactions
-next_id = compute_next_id(transactions)
+next_id = compute_next_id(transactions) + 1
 
 def transactions_menu():
     while True:
@@ -109,7 +110,7 @@ def add_transaction():
         pause()
         return
     try:
-        amount = float(input("Amount: ").strip())
+        amount = Decimal(input("Amount: ").strip())
     except ValueError:
         print("Invalid amount.")
         pause()
@@ -129,7 +130,7 @@ def add_transaction():
         "transaction_id": format_txn_id(next_id),
         "user_id": user_id,
         "type": ttype,
-        "amount": amount,
+        "amount": float(amount),
         "category": category,
         "date": tdate,
         "description": description,

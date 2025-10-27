@@ -14,6 +14,9 @@ Functions:
 from typing import Dict
 from decimal import Decimal
 
+from core import auth
+from core.search_filter import round_money
+
 
 def draw_bar(label: str, value: Decimal, max_value: Decimal, width: int = 40) -> str:
     """Return a formatted bar like: label | ███████████ 1200.00"""
@@ -46,17 +49,27 @@ def category_barchart(category_data: Dict[str, Decimal]) -> None:
 
 def monthly_barchart(monthly_data: Dict[str, Dict[str, Decimal]]) -> None:
     """Print a bar chart of net totals per month."""
+    if not auth.current_user:
+        print("You must be logged in to view this.")
+        input("Press Enter to return")
+        return
     if not monthly_data:
         print("⚠️ No monthly data to display.")
         return
-
+    
     print("\n📅 Monthly Spending Trend\n")
+    # Calculate net dynamically if missing
+    for v in monthly_data.values():
+        if "net" not in v:
+            v["net"] = round_money(v["income"] - v["expense"])
+
     max_net = max(v["net"] for v in monthly_data.values())
 
     # Sort months so they appear in order
     for month in sorted(monthly_data.keys()):
         net = monthly_data[month]["net"]
         print(draw_bar(month, net, max_net))
+    print(input("\nPress Enter to return"))
 
 
 

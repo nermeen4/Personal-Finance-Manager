@@ -12,12 +12,16 @@ def clear_screen():
 
 # ===== MODULE IMPORTS =====
 from core.data_manager import load_transactions
-from core import auth  # ✅ Import the real user management module
-from core import transactions  # ✅ Import the real transactions module
+from core import auth 
+from core import transactions  
 from core.reports import dashboard_summary, monthly_reports, category_breakdown, spending_trends
 from core.search_filter import apply_filters, round_money
 from decimal import Decimal
+
+
+
 from core.ascii_viz import monthly_barchart  # Import ASCII visualization function
+
 from advanced_features import save_goals, budget  # Advanced features modules
 
 
@@ -118,11 +122,14 @@ def search_and_filter_menu():
     # Show results
     if not filtered_txns:
         print("\n⚠️ No matching transactions found.")
+        print(input("\nPress Enter to return to main menu..."))
     else:
         print(f"\n✅ Found {len(filtered_txns)} transactions:\n")
         for txn in filtered_txns:
-            amount = round_money(Decimal(txn['amount']))  # ✅ formatted nicely
+            amount = round_money(Decimal(txn['amount']))
             print(f"{txn['date']} | {txn['category']} | {amount} | {txn['description']}")
+            print("-" * 50)
+        print(input("\nPress Enter to return to main menu..."))
 
     return filtered_txns  # ✅ makes it reusable for reports/export
 
@@ -137,7 +144,6 @@ def advanced_features_menu():
         print("1) 🎯 Savings Goals")
         print("2) 💸 Monthly Budget Manager")
         print("3) ⏰ Bill Reminders")
-        print("4) 📈 Financial Health Score")
         print("0) Back to Main Menu")
         choice = input("\nSelect an option: ").strip()
 
@@ -149,13 +155,9 @@ def advanced_features_menu():
             from advanced_features.budget import budgets_menu
             budgets_menu()
 
-        #elif choice == "3":
-            #from core.advanced_features.reminders import reminders_menu
-            #reminders_menu()
-
-        #elif choice == "4":
-            #from core.advanced_features.health_score import health_score_menu
-            #health_score_menu()
+        elif choice == "3":
+            from advanced_features.bill import bill_menu
+            bill_menu()
 
         elif choice == "0":
             return
@@ -217,12 +219,10 @@ def main_menu():
     # call advanced features menu
         elif choice == "6":
             advanced_features_menu()
-
-        
-            
-    else:
-        print("❌ Invalid choice.")
-        input("Press Enter to continue...")
+          
+        else:
+            print("❌ Invalid choice.")
+            input("Press Enter to continue...")
 
 # ========== ENTRY POINT ==========
 if __name__ == "__main__":

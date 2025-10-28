@@ -98,15 +98,5 @@
         "date": "2025-10-28",
         "description": "",
         "payment_method": "credit"
-    },
-    {
-        "transaction_id": "TXN011",
-        "user_id": "8b44b079-92bf-4b91-bb11-4415bf9ec624",
-        "type": "expense",
-        "amount": "2000",
-        "category": "skin_care",
-        "date": "2025-10-05",
-        "description": "for skin_care habits",
-        "payment_method": "Cash"
     }
 ]

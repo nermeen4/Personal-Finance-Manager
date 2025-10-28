@@ -1,176 +1,88 @@
 """
-bill.py - Simple bill reminder system.
+bill.py - Bill Reminder System (per-user)
 
 Features:
-- Add / list bills (per-user)
-- Persist bills to data/bills.json (uses core.data_manager)
-- Check due bills for current user and print reminders
+- Add / list bills
+- Mark bills as paid
+- Show bills due within 5 days
+- Uses core.data_manager for JSON persistence
 """
+
 from datetime import datetime, date, timedelta
 from typing import List, Dict, Any, Optional
-from core import data_manager, auth
 from decimal import Decimal
+from core import data_manager, auth
 
 import os
-# create new bills file to put the bills data
+
+
 BILLS_FILE = os.path.join(data_manager.DATA_DIR, "bills.json")
 
-def _ensure_data_dir():
+
+# ---------------- Data Loading & Saving ----------------
+def _load_bills() -> List[Dict[str, Any]]:
     data_manager.ensure_data_dir()
+    raw = data_manager.load_json(BILLS_FILE) or []
+    bills = []
+    for b in raw:
+        bills.append({
+            "bill_id": b.get("bill_id"),
+            "user_id": b.get("user_id"),
+            "name": b.get("name", ""),
+            "amount": Decimal(str(b.get("amount", "0"))),
+            "due_date": b.get("due_date"),
+            "repeat": b.get("repeat", "none"),
+            "payment_method": b.get("payment_method", ""),
+            "notes": b.get("notes", ""),
+            "paid": bool(b.get("paid", False))
+        })
+    return bills
 
-def load_bills() -> List[Dict[str, Any]]:
-    _ensure_data_dir()
-    try:
-        return data_manager.load_json(BILLS_FILE)
-    except Exception:
-        return []
 
-def save_bills(bills: List[Dict[str, Any]]):
-    _ensure_data_dir()
-    #create new bills file to put the bills data
-    try:
-        data_manager.save_json(BILLS_FILE, bills)
-    except Exception as e:
-        print(f"[bill] Warning: failed to save bills ({e})")
+def _save_bills():
+    serializable = []
+    for b in _bills:
+        serializable.append({
+            "bill_id": b["bill_id"],
+            "user_id": b["user_id"],
+            "name": b["name"],
+            "amount": str(b["amount"]),
+            "due_date": b["due_date"],
+            "repeat": b["repeat"],
+            "payment_method": b.get("payment_method", ""),
+            "notes": b.get("notes", ""),
+            "paid": b["paid"]
+        })
+    data_manager.save_json(BILLS_FILE, serializable)
 
-#put in in bill formate BILLxxx
-def _format_bill_id(n: int) -> str:
-    return f"BILL{n:03d}"
 
-def _compute_next_id(bills: List[Dict[str, Any]]) -> int:
+_bills = _load_bills()
+
+
+def _compute_next_id():
     maxn = 0
-    for b in bills:
-        bid = b.get("bill_id")
-        if not bid:
-            continue
-        s = str(bid)
-        digits = "".join(ch for ch in s if ch.isdigit())
-        if not digits:
-            continue
-        try:
-            n = int(digits)
-        except ValueError:
-            continue
-        if n > maxn:
-            maxn = n
+    for b in _bills:
+        bid = b.get("bill_id", "")
+        digits = "".join(ch for ch in bid if ch.isdigit())
+        if digits.isdigit():
+            maxn = max(maxn, int(digits))
     return maxn + 1
 
-# load the bills 
-_bills = load_bills()
-_next_id = _compute_next_id(_bills)
 
-# clears the screen for the next text
+_next_id = _compute_next_id()
+
+
 def clear_screen():
     print("\033c", end="")
 
-#pause the screen 
+
 def pause():
     input("Press Enter to return...")
 
-def add_bill():
-    global _next_id, _bills
-    if not auth.current_user:
-        print("You must be logged in to add a bill.")
-        pause()
-        return
 
-    clear_screen()
-    print("Add Bill")
-    #get bill info from user
-    name = input("Bill name: ").strip() or "Unnamed Bill"
+def _format_bill_id(n: int) -> str:
+    return f"BILL{n:03d}"
 
-    #validate amount and date
-    try:
-        amount = Decimal(input("Amount: ").strip())
-    except Exception:
-        print("Invalid amount.")
-        pause()
-        return
-    due = input("Due date (YYYY-MM-DD): ").strip()
-    try:
-        # validate date format
-        due_date = datetime.strptime(due, "%Y-%m-%d").date()
-        due = due_date.isoformat()
-    except Exception:
-        print("Invalid date format.")
-        pause()
-        return
-    
-
-    repeat = input("Repeat (monthly/yearly): ").strip().lower() or "none"
-    payment_method = input("Payment method (optional): ").strip() or ""
-    notes = input("Notes (optional): ").strip() or ""
-
-    #bill dictionary format
-    bill = {
-        "bill_id": _format_bill_id(_next_id),
-        "user_id": auth.current_user.get("user_id"),
-        "name": name,
-        "amount": float(amount),
-        "due_date": due,
-        "repeat": repeat if repeat in ("none", "monthly", "yearly") else "none",
-        "payment_method": payment_method,
-        "notes": notes,
-        "paid": False
-    }
-    # append bill to bills list and save and add another id for next bill
-    _bills.append(bill)
-    _next_id += 1
-    save_bills(_bills)
-    #show user bill added and its id
-    print(f"Bill added ({bill['bill_id']}).")
-    pause()
-
-#list all the bill of the user logged in
-def list_bills(show_all: bool = False):
-    clear_screen()
-    #if user isnt logged in
-    if not auth.current_user:
-        print("You must be logged in to view bills.")
-        pause()
-        return
-    
-    #if user is logged in
-    uid = auth.current_user.get("user_id")
-    user_bills = [b for b in _bills if b.get("user_id") == uid]
-
-
-    #if no bills found for user
-    if not user_bills:
-        print("No bills found for current user.")
-        pause()
-        return
-    
-    print("Your bills:")
-    print("-" * 40)
-
-
-    # list all bills for user logged in
-    for bill in user_bills:
-        status = "Paid" if bill.get("paid") else "Due"
-        print(f"{bill['bill_id']} | {bill['due_date']} | {bill['name']} | {bill['amount']:.2f} | {status} | {bill.get('notes','')}")
-    pause()
-
-def mark_paid(bill_id: str):
-    global _bills
-
-    #if user isnt logged in
-    if not auth.current_user:
-        print("You must be logged in to mark bills.")
-        pause()
-        return
-    
-    
-    uid = auth.current_user.get("user_id")
-    for bill in _bills:
-        if bill.get("bill_id") == bill_id and bill.get("user_id") == uid:
-            bill["paid"] = True
-            save_bills(_bills)
-            print(f"{bill_id} marked as paid.")
-            pause()
-            return
-    print("Bill not found or not permitted.")
-    pause()
 
 def _parse_date(s: str) -> Optional[date]:
     try:
@@ -179,60 +91,160 @@ def _parse_date(s: str) -> Optional[date]:
         return None
 
 
+# ---------------- Core Functions ----------------
+def add_bill():
+    global _next_id
+    if not auth.current_user:
+        print("⚠️ Login required.")
+        pause()
+        return
+
+    clear_screen()
+    print("➕ Add Bill")
+
+    name = input("Bill name: ").strip() or "Unnamed Bill"
+
+    try:
+        amount = Decimal(input("Amount: ").strip())
+        if amount <= 0:
+            raise ValueError
+    except Exception:
+        print("❌ Invalid amount.")
+        pause()
+        return
+
+    due_str = input("Due date (YYYY-MM-DD): ").strip()
+    due_date = _parse_date(due_str)
+    if not due_date:
+        print("❌ Invalid date format.")
+        pause()
+        return
+
+    repeat = input("Repeat (none/monthly/yearly): ").strip().lower()
+    repeat = repeat if repeat in ("none", "monthly", "yearly") else "none"
+
+    bill = {
+        "bill_id": _format_bill_id(_next_id),
+        "user_id": auth.current_user.get("user_id"),
+        "name": name,
+        "amount": amount,
+        "due_date": due_date.isoformat(),
+        "repeat": repeat,
+        "payment_method": input("Payment method: ").strip() or "",
+        "notes": input("Notes: ").strip() or "",
+        "paid": False
+    }
+
+    _bills.append(bill)
+    _next_id += 1
+    _save_bills()
+
+    print(f"✅ Bill added ({bill['bill_id']})")
+    pause()
+
+
+def list_bills():
+    if not auth.current_user:
+        print("⚠️ Login required.")
+        pause()
+        return
+
+    clear_screen()
+    uid = auth.current_user.get("user_id")
+    user_bills = [b for b in _bills if b.get("user_id") == uid]
+
+    if not user_bills:
+        print("No bills found.")
+        pause()
+        return
+
+    print("📋 Your Bills")
+    print("-" * 45)
+    for bill in sorted(user_bills, key=lambda b: b.get("due_date")):
+        status = "✅ Paid" if bill["paid"] else "⚠️ Due"
+        print(f"{bill['bill_id']} | {bill['due_date']} | {bill['name']} | {bill['amount']:.2f} | {status}")
+    print("-" * 45)
+    pause()
+
+
+def mark_paid(bill_id: str):
+    if not auth.current_user:
+        print("⚠️ Login required.")
+        pause()
+        return
+
+    uid = auth.current_user.get("user_id")
+
+    for bill in _bills:
+        if bill["bill_id"] == bill_id and bill["user_id"] == uid:
+            bill["paid"] = True
+            _save_bills()
+            print(f"✅ Marked {bill_id} as paid.")
+            pause()
+            return
+
+    print("❌ Bill not found.")
+    pause()
+
 
 def check_due_next_5_days():
-    #return unpaid bills for the current user due within the next 5 days."""
     if not auth.current_user:
-        return []
+        return
+
     uid = auth.current_user.get("user_id")
     today = date.today()
     end_date = today + timedelta(days=5)
-    due: List[Dict[str, Any]] = []
+    due_list = []
 
     for bill in _bills:
-        if bill.get("user_id") != uid:
+        if bill["user_id"] != uid or bill["paid"]:
             continue
-        d = _parse_date(bill.get("due_date", ""))
+
+        d = _parse_date(bill["due_date"])
         if not d:
             continue
-        if today <= d <= end_date and not bill["paid"]:
-            due.append(bill)
 
-    if due:
-        print("\n Bills due in the next 5 days")
-        print("-" * 40)
-        for bill in due:
-            days = (_parse_date(bill["due_date"]) - today).days
-            when = "today" if days == 0 else f"in {days} day(s)" if days > 0 else f"{-days} day(s) overdue"
-            print(f"{bill['bill_id']}: {bill['name']} — {bill['amount']:.2f} due {bill['due_date']} ({when})")
-        print("-" * 40)
-    
+        if today <= d <= end_date:
+            due_list.append(bill)
+
+    if not due_list:
+        print("✅ No upcoming bills!")
+        return
+
+    print("\n🔔 Bills Due Soon (Next 5 Days)")
+    print("-" * 45)
+    for bill in due_list:
+        days = ( _parse_date(bill["due_date"]) - today ).days
+        when = "today" if days == 0 else f"in {days} day(s)"
+        print(f"{bill['bill_id']}: {bill['name']} — {bill['amount']:.2f} due {bill['due_date']} ({when})")
+    print("-" * 45)
 
 
 def bill_menu():
     while True:
         clear_screen()
-        print("🔔 BILLS & REMINDERS")
+        print("🔔 BILL REMINDERS")
         print("-" * 40)
-        print("1) Add bill")
-        print("2) List my bills")
-        print("3) Mark bill paid")
-        print("4) Check due bills")
+        print("1) Add Bill")
+        print("2) List Bills")
+        print("3) Mark Bill Paid")
+        print("4) View Due Soon")
         print("0) Back")
         choice = input("\nChoose: ").strip()
+
         if choice == "0":
             break
-        if choice == "1":
+        elif choice == "1":
             add_bill()
         elif choice == "2":
             list_bills()
         elif choice == "3":
-            bid = input("Enter bill id (e.g. BILL001): ").strip()
+            bid = input("Enter Bill ID: ").strip()
             mark_paid(bid)
         elif choice == "4":
             clear_screen()
             check_due_next_5_days()
             pause()
         else:
-            print("Invalid choice.")
+            print("❌ Invalid choice.")
             pause()

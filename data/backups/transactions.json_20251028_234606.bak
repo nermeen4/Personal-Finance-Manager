@@ -1,0 +1,122 @@
+[
+    {
+        "transaction_id": "TXN001",
+        "user_id": "U001",
+        "type": "expense",
+        "amount": 60.0,
+        "category": "electricity",
+        "date": "2025-10-27",
+        "description": "electric",
+        "payment_method": "Cash"
+    },
+    {
+        "transaction_id": "TXN002",
+        "user_id": "U001",
+        "type": "income",
+        "amount": 30.0,
+        "category": "garage",
+        "date": "2025-10-27",
+        "description": "",
+        "payment_method": "Cash"
+    },
+    {
+        "transaction_id": "TXN003",
+        "user_id": "U001",
+        "type": "income",
+        "amount": 55.0,
+        "category": "salary",
+        "date": "2025-10-27",
+        "description": "",
+        "payment_method": "Cash"
+    },
+    {
+        "transaction_id": "TXN004",
+        "user_id": "U001",
+        "type": "income",
+        "amount": 90.0,
+        "category": "salaaaary",
+        "date": "2025-10-27",
+        "description": "sal",
+        "payment_method": "Cash"
+    },
+    {
+        "transaction_id": "TXN005",
+        "user_id": "U001",
+        "type": "income",
+        "amount": 60.0,
+        "category": "food",
+        "date": "2025-10-27",
+        "description": "",
+        "payment_method": "cash"
+    },
+    {
+        "transaction_id": "TXN006",
+        "user_id": "U001",
+        "type": "income",
+        "amount": 50.0,
+        "category": "car",
+        "date": "2025-10-27",
+        "description": "caaaar",
+        "payment_method": "Cash"
+    },
+    {
+        "transaction_id": "TXN007",
+        "user_id": "U001",
+        "type": "income",
+        "amount": 50.0,
+        "category": "food",
+        "date": "2025-10-15",
+        "description": "",
+        "payment_method": "Cash"
+    },
+    {
+        "transaction_id": "TXN008",
+        "user_id": "U003",
+        "type": "expense",
+        "amount": 10000.0,
+        "category": "villa maadi",
+        "date": "2025-10-27",
+        "description": "VILLA",
+        "payment_method": "Cash"
+    },
+    {
+        "transaction_id": "TXN009",
+        "user_id": "U003",
+        "type": "expense",
+        "amount": 500.0,
+        "category": "shampoo",
+        "date": "2025-10-29",
+        "description": "",
+        "payment_method": "Cash"
+    },
+    {
+        "transaction_id": "TXN010",
+        "user_id": "8b44b079-92bf-4b91-bb11-4415bf9ec624",
+        "type": "income",
+        "amount": "10000",
+        "category": "food",
+        "date": "2025-10-28",
+        "description": "",
+        "payment_method": "credit"
+    },
+    {
+        "transaction_id": "TXN011",
+        "user_id": "8b44b079-92bf-4b91-bb11-4415bf9ec624",
+        "type": "expense",
+        "amount": "2000",
+        "category": "skin_care",
+        "date": "2025-10-05",
+        "description": "for skin_care habits",
+        "payment_method": "Cash"
+    },
+    {
+        "transaction_id": "TXN012",
+        "user_id": "8b44b079-92bf-4b91-bb11-4415bf9ec624",
+        "type": "income",
+        "amount": "100",
+        "category": "test",
+        "date": "2025-10-28",
+        "description": "testtt",
+        "payment_method": "Cash"
+    }
+]

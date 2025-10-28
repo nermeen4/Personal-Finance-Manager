@@ -9,16 +9,5 @@
         "payment_method": "cash",
         "notes": "",
         "paid": true
-    },
-    {
-        "bill_id": "BILL002",
-        "user_id": "8b44b079-92bf-4b91-bb11-4415bf9ec624",
-        "name": "oil",
-        "amount": "50",
-        "due_date": "2025-10-30",
-        "repeat": "monthly",
-        "payment_method": "cash",
-        "notes": "",
-        "paid": true
     }
 ]

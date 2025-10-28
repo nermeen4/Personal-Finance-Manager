@@ -28,17 +28,5 @@
         "name": "nermeen magdy",
         "password": "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4",
         "currency": "EGP"
-    },
-    {
-        "user_id": "9306e649-f81c-47a2-a2b6-056845a908f1",
-        "name": "noha",
-        "password": "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4",
-        "currency": "UDS"
-    },
-    {
-        "user_id": "8b44b079-92bf-4b91-bb11-4415bf9ec624",
-        "name": "dena",
-        "password": "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4",
-        "currency": "USD"
     }
 ]

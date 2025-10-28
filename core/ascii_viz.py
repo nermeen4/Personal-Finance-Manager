@@ -12,74 +12,86 @@ Functions:
 
 
 from typing import Dict
-from decimal import Decimal
-
-from core import auth
+from decimal import Decimal, InvalidOperation
 from core.search_filter import round_money
 
 
-def draw_bar(label: str, value: Decimal, max_value: Decimal, width: int = 40) -> str:
-    """Return a formatted bar like: label | ███████████ 1200.00"""
+
+# ✅ Safe conversion for numeric visualization
+def _to_decimal(value) -> Decimal:
+    try:
+        return Decimal(str(value))
+    except (InvalidOperation, ValueError, TypeError):
+        return Decimal("0.00")
+    
+
+def draw_bar(label: str, value, max_value: Decimal, width: int = 50) -> str:
+    """
+    Render bar as: Category     | ███████████ 1200.00
+    - Safe Decimal conversion
+    - Protects against zero max
+    """
+    value = _to_decimal(value)
+    max_value = _to_decimal(max_value)
+
     if max_value <= 0:
         max_value = Decimal("1.00")
-    ratio = Decimal(value / max_value)
+
+    ratio = value / max_value
     bar_len = int(ratio * width)
     bar = "█" * bar_len
-    return f"{label:<12} | {bar} {value}"
+
+    return f"{label:<15.15} | {bar} {value:.2f}"
 
 
-
+# ========================== 📊 CATEGORY CHART ========================== #
 
 def category_barchart(category_data: Dict[str, Decimal]) -> None:
-    """Print a bar chart for category breakdown.""" 
     if not category_data:
-        print("No category data to display.")
+        print("⚠️ No category data to display.")
         return
 
     max_value = max(category_data.values())
-    print("📂 CATEGORY BREAKDOWN (Bar Chart)")
-    print("-" * 50)
+    print("\n📂 CATEGORY BREAKDOWN (Expenses)\n" + "-" * 60)
+
     for category, amount in sorted(category_data.items(), key=lambda x: x[1], reverse=True):
         print(draw_bar(category, amount, max_value))
-    print("-" * 50)
-    print()
+
+    print("-" * 60 + "\n")
 
 
-
+# ======================== 📅 MONTHLY NET BAR CHART ===================== #
 
 def monthly_barchart(monthly_data: Dict[str, Dict[str, Decimal]]) -> None:
-    """Print a bar chart of net totals per month."""
-    if not auth.current_user:
-        print("You must be logged in to view this.")
-        input("Press Enter to return")
-        return
     if not monthly_data:
         print("⚠️ No monthly data to display.")
         return
     
-    print("\n📅 Monthly Spending Trend\n")
-    # Calculate net dynamically if missing
-    for v in monthly_data.values():
-        if "net" not in v:
-            v["net"] = round_money(v["income"] - v["expense"])
+    print("\n📅 Monthly Net Summary\n" + "-" * 60)
 
-    max_net = max(v["net"] for v in monthly_data.values())
+    # Ensure net values exist and rounded
+    for m, vals in monthly_data.items():
+        vals["net"] = round_money(vals.get("net", vals["income"] - vals["expense"]))
 
-    # Sort months so they appear in order
+    max_net = max(vals["net"] for vals in monthly_data.values())
+
     for month in sorted(monthly_data.keys()):
-        net = monthly_data[month]["net"]
-        print(draw_bar(month, net, max_net))
-    print(input("\nPress Enter to return"))
+        print(draw_bar(month, monthly_data[month]["net"], max_net))
+
+    print("-" * 60 + "\n")
 
 
-
+# ========================= 📈 TREND CHART ============================= #
 def trend_chart(trends_data: Dict[str, Decimal]) -> None:
-    """Print trend chart for expenses over months."""
     if not trends_data:
         print("⚠️ No trend data available.")
         return
 
     max_val = max(trends_data.values())
-    print("\n📈 Spending Trend\n")
+
+    print("\n📈 Expense Trend\n" + "-" * 60)
+
     for month in sorted(trends_data.keys()):
-        print(draw_bar(month, trends_data[month], max_val))
+        print(draw_bar(month, round_money(trends_data[month]), max_val))
+
+    print("-" * 60 + "\n")

@@ -40,11 +40,5 @@
         "name": "dena",
         "password": "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4",
         "currency": "USD"
-    },
-    {
-        "user_id": "6bc8869a-43ef-4851-ba54-18e279d3f8da",
-        "name": "nana",
-        "password": "5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5",
-        "currency": "USD"
     }
 ]

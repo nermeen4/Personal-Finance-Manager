@@ -8,6 +8,8 @@ from typing import List, Dict, Any, Optional
 from datetime import datetime, date
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 
+from core import auth
+
 DATE_FMT = "%Y-%m-%d"
 
 
@@ -42,6 +44,13 @@ def _txn_date(txn: Dict[str, Any]) -> Optional[date]:
 
 
 # ========================= 🔹 FILTERING 🔹 ========================= #
+
+def _filter_current_user(transactions: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Keep only logged-in user's transactions."""
+    if not auth.current_user:
+        return []
+    uid = auth.current_user.get("user_id")
+    return [tx for tx in transactions if tx.get("user_id") == uid]
 
 def filter_by_date_range(
     transactions: List[Dict[str, Any]],
@@ -137,7 +146,8 @@ def apply_filters(
     reverse: bool = False
 ) -> List[Dict[str, Any]]:
     """Chain all filters and sorting in correct order."""
-    txns = filter_by_date_range(transactions, start_date, end_date)
+    txns = _filter_current_user(transactions)
+    txns = filter_by_date_range(txns, start_date, end_date)
     txns = filter_by_category(txns, category)
     txns = filter_by_amount_range(txns, min_amount, max_amount)
     txns = search_transactions(txns, keyword)

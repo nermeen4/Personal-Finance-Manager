@@ -19,6 +19,6 @@
         "repeat": "monthly",
         "payment_method": "cash",
         "notes": "",
-        "paid": true
+        "paid": false
     }
 ]
